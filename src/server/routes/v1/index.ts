@@ -14,6 +14,7 @@ import { authRouter } from './auth.ts';
 import { rbacRouter } from './rbac.ts';
 import { onboardingRouter } from './onboarding.ts';
 import { platformRouter } from './platform.ts';
+import { tenantRouter } from './tenant.ts';
 
 export const v1Router = Router();
 
@@ -37,6 +38,9 @@ v1Router.use('/onboarding', onboardingRouter);
 
 // 7. Super Admin platform governance, billing, monitoring & controlled support access
 v1Router.use('/platform', platformRouter);
+
+// 8. Tenant Store Owner Dashboard operations, catalog, orders, settings & analytics
+v1Router.use('/tenant', tenantRouter);
 
 // 4. API v1 Root Info & Directory
 v1Router.get('/', (_req: Request, res: Response) => {

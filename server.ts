@@ -12,6 +12,7 @@ import { connectToDatabase, disconnectFromDatabase } from './src/server/config/d
 import { env } from './packages/config/src/index.ts';
 import { logger } from './src/server/utils/logger.ts';
 import { ensurePlatformBootstrapped } from './src/server/platform/platformRepository.ts';
+import { ensureTenantDashboardBootstrapped } from './src/server/tenant/tenantRepository.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +27,7 @@ async function startServer(): Promise<void> {
   // 1. Connect Database (Non-blocking fallback for dev sandboxes)
   await connectToDatabase();
   await ensurePlatformBootstrapped();
+  await ensureTenantDashboardBootstrapped();
 
   // 2. Setup Frontend Ingress (Vite middleware in dev, static files in prod)
   if (!isProduction) {

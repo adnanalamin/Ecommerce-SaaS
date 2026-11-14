@@ -123,6 +123,9 @@ export {
   InventoryModel,
   InventorySchema,
   type IInventory,
+  SearchAnalyticsLogModel,
+  SearchAnalyticsLogSchema,
+  type ISearchAnalyticsLog,
 } from './schemas/tenant/catalog.ts';
 
 // 4. CUSTOMERS & COMMERCE PRE-PURCHASE MODELS

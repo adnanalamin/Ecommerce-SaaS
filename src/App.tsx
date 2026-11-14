@@ -19,9 +19,10 @@ import { AuthWorkbenchView } from './client/components/auth/AuthWorkbenchView.ts
 import { RbacConsoleView } from './client/components/rbac/RbacConsoleView.tsx';
 import { StoreOnboardingView } from './client/components/onboarding/StoreOnboardingView.tsx';
 import { SuperAdminDashboardView } from './client/components/platform/SuperAdminDashboardView.tsx';
+import { TenantDashboardView } from './client/components/tenant/TenantDashboardView.tsx';
 
 function AppContent() {
-  const [activeNavId, setActiveNavId] = useState<string>('super-admin');
+  const [activeNavId, setActiveNavId] = useState<string>('tenant-dashboard');
   const [activeArchTab, setActiveArchTab] = useState<string>('overview');
   const [healthData, setHealthData] = useState<HealthCheckResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(false);
@@ -69,6 +70,7 @@ function AppContent() {
 
 
   const breadcrumbsMap: Record<string, Array<{ label: string }>> = {
+    'tenant-dashboard': [{ label: 'NEXORA Merchant' }, { label: 'Phase 10 Store Owner Dashboard' }],
     'super-admin': [{ label: 'NEXORA Platform' }, { label: 'Phase 09 Super Admin Dashboard' }],
     'onboarding': [{ label: 'NEXORA Platform' }, { label: 'Phase 08 Automatic Store Creation' }],
     'rbac': [{ label: 'NEXORA Platform' }, { label: 'Phase 07 RBAC & Permissions' }],
@@ -92,6 +94,9 @@ function AppContent() {
       breadcrumbs={breadcrumbsMap[activeNavId] || [{ label: 'NEXORA' }, { label: 'Overview' }]}
     >
       <ToastContainer />
+
+      {/* VIEW -6: PHASE 10 TENANT STORE OWNER DASHBOARD */}
+      {activeNavId === 'tenant-dashboard' && <TenantDashboardView />}
 
       {/* VIEW -5: PHASE 09 SUPER ADMIN DASHBOARD */}
       {activeNavId === 'super-admin' && <SuperAdminDashboardView />}
