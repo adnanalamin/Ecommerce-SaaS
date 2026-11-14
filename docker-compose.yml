@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 1. NEXORA Application Server
+  nexora-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexora-app-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017/nexora_dev?replicaSet=rs0
+      - REDIS_URL=redis://redis:6379
+      - JWT_ACCESS_SECRET=nexora_dev_jwt_access_secret_32_characters_minimum
+      - JWT_REFRESH_SECRET=nexora_dev_jwt_refresh_secret_32_characters_minimum
+      - COOKIE_SECRET=nexora_dev_cookie_signing_secret_32_chars_min
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  # 2. MongoDB Replica Set (Single-node replica set for ACID transaction support)
+  mongo:
+    image: mongo:7.0
+    container_name: nexora-mongo-dev
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: >
+        mongosh --port 27017 --eval "
+          try {
+            rs.status().ok
+          } catch {
+            rs.initiate({
+              _id: 'rs0',
+              members: [{ _id: 0, host: '127.0.0.1:27017' }]
+            }).ok
+          }
+        " || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # 3. Redis In-Memory Cache & BullMQ Queue Store
+  redis:
+    image: redis:7.2-alpine
+    container_name: nexora-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-data:
+    driver: local
+  redis-data:
+    driver: local

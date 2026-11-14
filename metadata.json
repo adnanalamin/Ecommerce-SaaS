@@ -1,0 +1,6 @@
+{
+  "name": "NEXORA SaaS Platform",
+  "description": "Multi-tenant SaaS E-Commerce Store Builder with tenant isolation, custom branding, and localized payment gateways.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
