@@ -18,9 +18,10 @@ import { SecurityFoundationView } from './client/components/security/SecurityFou
 import { AuthWorkbenchView } from './client/components/auth/AuthWorkbenchView.tsx';
 import { RbacConsoleView } from './client/components/rbac/RbacConsoleView.tsx';
 import { StoreOnboardingView } from './client/components/onboarding/StoreOnboardingView.tsx';
+import { SuperAdminDashboardView } from './client/components/platform/SuperAdminDashboardView.tsx';
 
 function AppContent() {
-  const [activeNavId, setActiveNavId] = useState<string>('onboarding');
+  const [activeNavId, setActiveNavId] = useState<string>('super-admin');
   const [activeArchTab, setActiveArchTab] = useState<string>('overview');
   const [healthData, setHealthData] = useState<HealthCheckResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(false);
@@ -68,6 +69,7 @@ function AppContent() {
 
 
   const breadcrumbsMap: Record<string, Array<{ label: string }>> = {
+    'super-admin': [{ label: 'NEXORA Platform' }, { label: 'Phase 09 Super Admin Dashboard' }],
     'onboarding': [{ label: 'NEXORA Platform' }, { label: 'Phase 08 Automatic Store Creation' }],
     'rbac': [{ label: 'NEXORA Platform' }, { label: 'Phase 07 RBAC & Permissions' }],
     'auth': [{ label: 'NEXORA Platform' }, { label: 'Phase 06 Authentication & MFA' }],
@@ -90,6 +92,9 @@ function AppContent() {
       breadcrumbs={breadcrumbsMap[activeNavId] || [{ label: 'NEXORA' }, { label: 'Overview' }]}
     >
       <ToastContainer />
+
+      {/* VIEW -5: PHASE 09 SUPER ADMIN DASHBOARD */}
+      {activeNavId === 'super-admin' && <SuperAdminDashboardView />}
 
       {/* VIEW -4: PHASE 08 AUTOMATIC TENANT STORE CREATION */}
       {activeNavId === 'onboarding' && <StoreOnboardingView />}

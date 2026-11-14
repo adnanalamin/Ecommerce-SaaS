@@ -72,6 +72,20 @@ export {
   type OnboardingSessionStatus,
 } from './schemas/global/onboarding.ts';
 
+export {
+  SupportTicketModel,
+  SupportTicketSchema,
+  type ISupportTicket,
+  type SupportTicketStatus,
+  type SupportTicketPriority,
+  type SupportTicketCategory,
+  SupportAccessGrantModel,
+  SupportAccessGrantSchema,
+  type ISupportAccessGrant,
+  type SupportAccessScope,
+  type SupportAccessStatus,
+} from './schemas/global/platformGovernance.ts';
+
 // 2. TENANT ORGANIZATIONAL MODELS
 export {
   StoreModel,
@@ -138,6 +152,8 @@ export {
   PaymentModel,
   PaymentSchema,
   type IPayment,
+  type PaymentGateway,
+  type TransactionStatus,
   RefundModel,
   RefundSchema,
   type IRefund,

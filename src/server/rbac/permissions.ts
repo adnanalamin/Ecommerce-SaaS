@@ -44,6 +44,9 @@ export const PERMISSIONS_CATALOG: PermissionDefinition[] = [
   { code: 'platform:finance:read', name: 'View Platform Finance', description: 'View SaaS subscriptions, GMV settlements, and fee ledgers.', module: 'FINTECH', scope: 'PLATFORM' },
   { code: 'platform:finance:manage', name: 'Manage Platform Finance', description: 'Approve payouts, plans, and platform-level refunds.', module: 'FINTECH', scope: 'PLATFORM' },
   { code: 'platform:support:manage', name: 'Platform Support Operations', description: 'Investigate merchant support escalations and diagnostics.', module: 'PLATFORM', scope: 'PLATFORM' },
+  { code: 'platform:settings:manage', name: 'Manage Platform Branding & Settings', description: 'Configure global NEXORA branding, maintenance locks, and security policies.', module: 'SETTINGS', scope: 'PLATFORM' },
+  { code: 'platform:ads:manage', name: 'Manage Platform Advertisements', description: 'Govern global AdSense policy, excluded checkout routes, and store ad slots.', module: 'MARKETING', scope: 'PLATFORM' },
+  { code: 'platform:export:data', name: 'Export Platform CSV Reports', description: 'Export platform tenant, billing, payment, and audit CSV datasets.', module: 'AUDIT', scope: 'PLATFORM' },
   { code: 'platform:audit:read', name: 'Read Platform Audit Logs', description: 'Query platform-wide governance and RBAC security logs.', module: 'AUDIT', scope: 'PLATFORM' },
 
   // TENANT SCOPE — PRODUCTS
@@ -125,6 +128,9 @@ export const ROLE_DEFINITIONS: RoleDefinition[] = [
       'platform:tenants:manage',
       'platform:roles:assign',
       'platform:support:manage',
+      'platform:settings:manage',
+      'platform:ads:manage',
+      'platform:export:data',
       'platform:audit:read',
     ],
     isSystemDefault: true,
@@ -139,6 +145,7 @@ export const ROLE_DEFINITIONS: RoleDefinition[] = [
       'platform:tenants:read',
       'platform:finance:read',
       'platform:finance:manage',
+      'platform:export:data',
       'platform:audit:read',
     ],
     isSystemDefault: true,

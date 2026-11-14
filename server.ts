@@ -11,6 +11,7 @@ import { createExpressApp } from './src/server/app.ts';
 import { connectToDatabase, disconnectFromDatabase } from './src/server/config/database.ts';
 import { env } from './packages/config/src/index.ts';
 import { logger } from './src/server/utils/logger.ts';
+import { ensurePlatformBootstrapped } from './src/server/platform/platformRepository.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +25,7 @@ async function startServer(): Promise<void> {
 
   // 1. Connect Database (Non-blocking fallback for dev sandboxes)
   await connectToDatabase();
+  await ensurePlatformBootstrapped();
 
   // 2. Setup Frontend Ingress (Vite middleware in dev, static files in prod)
   if (!isProduction) {

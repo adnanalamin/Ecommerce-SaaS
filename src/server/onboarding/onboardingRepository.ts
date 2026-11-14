@@ -61,11 +61,16 @@ export interface PlanRecord {
   description: string;
   priceMonthlyUSD: number;
   priceMonthlyBDT: number;
+  priceYearlyUSD?: number;
+  priceYearlyBDT?: number;
   maxProducts: number;
   maxStaffUsers: number;
   maxStorageMB: number;
   transactionFeePercent: number;
   customDomainAllowed: boolean;
+  adSenseAllowed?: boolean;
+  hasDedicatedDatabase?: boolean;
+  isActive?: boolean;
 }
 
 export interface OnboardingSessionRecord {
@@ -238,11 +243,16 @@ export async function ensureOnboardingBootstrapped(): Promise<void> {
           description: doc.description,
           priceMonthlyUSD: doc.priceMonthlyUSD,
           priceMonthlyBDT: doc.priceMonthlyBDT,
+          priceYearlyUSD: doc.priceYearlyUSD,
+          priceYearlyBDT: doc.priceYearlyBDT,
           maxProducts: doc.maxProducts,
           maxStaffUsers: doc.maxStaffUsers,
           maxStorageMB: doc.maxStorageMB,
           transactionFeePercent: doc.transactionFeePercent,
           customDomainAllowed: Boolean(doc.customDomainAllowed),
+          adSenseAllowed: Boolean(doc.adSenseAllowed),
+          hasDedicatedDatabase: Boolean(doc.hasDedicatedDatabase),
+          isActive: doc.isActive !== false,
         });
       } else {
         sandboxPlans.set(p.code, {
@@ -252,11 +262,16 @@ export async function ensureOnboardingBootstrapped(): Promise<void> {
           description: p.description,
           priceMonthlyUSD: p.priceMonthlyUSD,
           priceMonthlyBDT: p.priceMonthlyBDT,
+          priceYearlyUSD: p.priceYearlyUSD,
+          priceYearlyBDT: p.priceYearlyBDT,
           maxProducts: p.maxProducts,
           maxStaffUsers: p.maxStaffUsers,
           maxStorageMB: p.maxStorageMB,
           transactionFeePercent: p.transactionFeePercent,
           customDomainAllowed: p.customDomainAllowed,
+          adSenseAllowed: p.adSenseAllowed,
+          hasDedicatedDatabase: p.hasDedicatedDatabase,
+          isActive: true,
         });
       }
     }
@@ -1038,6 +1053,188 @@ export const onboardingRepository = {
     }
     rbacRepository.updateSandboxTenantStatus(tenantId, status);
     return { ...updated };
+  },
+
+  async updatePlanRecord(
+    code: 'STARTER' | 'GROWTH' | 'PRO' | 'ENTERPRISE',
+    patch: Partial<Omit<PlanRecord, 'id' | 'code'>>
+  ): Promise<PlanRecord | null> {
+    await ensureOnboardingBootstrapped();
+    if (isDatabaseConnected()) {
+      const doc: any = await PlanModel.findOneAndUpdate(
+        { code },
+        { $set: patch },
+        { returnDocument: 'after' }
+      ).lean();
+      if (!doc) return null;
+      const mapped: PlanRecord = {
+        id: doc._id.toString(),
+        code: doc.code,
+        name: doc.name,
+        description: doc.description,
+        priceMonthlyUSD: doc.priceMonthlyUSD,
+        priceMonthlyBDT: doc.priceMonthlyBDT,
+        priceYearlyUSD: doc.priceYearlyUSD,
+        priceYearlyBDT: doc.priceYearlyBDT,
+        maxProducts: doc.maxProducts,
+        maxStaffUsers: doc.maxStaffUsers,
+        maxStorageMB: doc.maxStorageMB,
+        transactionFeePercent: doc.transactionFeePercent,
+        customDomainAllowed: Boolean(doc.customDomainAllowed),
+        adSenseAllowed: Boolean(doc.adSenseAllowed),
+        hasDedicatedDatabase: Boolean(doc.hasDedicatedDatabase),
+        isActive: doc.isActive !== false,
+      };
+      sandboxPlans.set(code, mapped);
+      return { ...mapped };
+    }
+
+    const existing = sandboxPlans.get(code);
+    if (!existing) return null;
+    const updated: PlanRecord = { ...existing, ...patch };
+    sandboxPlans.set(code, updated);
+    return { ...updated };
+  },
+
+  async listAllSubscriptions(): Promise<ProvisionedSubscriptionRecord[]> {
+    await ensureOnboardingBootstrapped();
+    if (isDatabaseConnected()) {
+      const [subs, plans]: any[] = await Promise.all([
+        SubscriptionModel.find({}).setOptions({ bypassTenantCheck: true }).lean(),
+        PlanModel.find({}).lean(),
+      ]);
+      const planMap = new Map<string, any>(plans.map((p: any) => [p._id.toString(), p]));
+      return subs.map((s: any) => {
+        const plan = planMap.get(s.planId?.toString());
+        return {
+          id: s._id.toString(),
+          tenantId: s.tenantId.toString(),
+          planId: s.planId?.toString() || '',
+          planCode: plan?.code || 'STARTER',
+          status: s.status,
+          billingCycle: s.billingCycle || 'MONTHLY',
+          currentPeriodStart: s.currentPeriodStart,
+          currentPeriodEnd: s.currentPeriodEnd,
+        };
+      });
+    }
+    return Array.from(sandboxSubscriptions.values()).map((s) => ({ ...s }));
+  },
+
+  async updateTenantSubscriptionRecord(
+    tenantId: string,
+    patch: {
+      planCode?: 'STARTER' | 'GROWTH' | 'PRO' | 'ENTERPRISE';
+      status?: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'SUSPENDED' | 'CANCELLED';
+      billingCycle?: 'MONTHLY' | 'YEARLY';
+    }
+  ): Promise<ProvisionedSubscriptionRecord | null> {
+    await ensureOnboardingBootstrapped();
+    const plans = await this.listPlans();
+    const targetPlan = patch.planCode ? plans.find((p) => p.code === patch.planCode) : undefined;
+
+    if (isDatabaseConnected()) {
+      if (!Types.ObjectId.isValid(tenantId)) return null;
+      const tObjId = new Types.ObjectId(tenantId);
+      const subPatch: Record<string, any> = {};
+      if (patch.status) subPatch.status = patch.status;
+      if (patch.billingCycle) subPatch.billingCycle = patch.billingCycle;
+      if (targetPlan) subPatch.planId = new Types.ObjectId(targetPlan.id);
+      if (patch.status === 'CANCELLED') subPatch.cancelledAt = new Date();
+
+      const doc: any = await SubscriptionModel.findOneAndUpdate(
+        { tenantId: tObjId },
+        { $set: subPatch },
+        { returnDocument: 'after' }
+      )
+        .setOptions({ bypassTenantCheck: true })
+        .lean();
+      if (!doc) return null;
+
+      if (targetPlan) {
+        await TenantModel.updateOne(
+          { _id: tObjId },
+          {
+            $set: {
+              tier: targetPlan.code,
+              currentPlanId: new Types.ObjectId(targetPlan.id),
+              storageQuotaMB: targetPlan.maxStorageMB,
+            },
+          }
+        );
+      }
+
+      const planCode =
+        targetPlan?.code ||
+        plans.find((p) => p.id === doc.planId?.toString())?.code ||
+        'STARTER';
+      return {
+        id: doc._id.toString(),
+        tenantId,
+        planId: doc.planId?.toString() || '',
+        planCode,
+        status: doc.status,
+        billingCycle: doc.billingCycle,
+        currentPeriodStart: doc.currentPeriodStart,
+        currentPeriodEnd: doc.currentPeriodEnd,
+      };
+    }
+
+    const sub = sandboxSubscriptions.get(tenantId);
+    if (!sub) return null;
+    const updated: ProvisionedSubscriptionRecord = {
+      ...sub,
+      ...(patch.status ? { status: patch.status } : {}),
+      ...(patch.billingCycle ? { billingCycle: patch.billingCycle } : {}),
+      ...(targetPlan ? { planId: targetPlan.id, planCode: targetPlan.code } : {}),
+    };
+    sandboxSubscriptions.set(tenantId, updated);
+
+    if (targetPlan) {
+      const tenant = sandboxTenants.get(tenantId);
+      if (tenant) {
+        sandboxTenants.set(tenantId, {
+          ...tenant,
+          tier: targetPlan.code,
+          currentPlanId: targetPlan.id,
+          storageQuotaMB: targetPlan.maxStorageMB,
+          updatedAt: new Date(),
+        });
+      }
+    }
+    return { ...updated };
+  },
+
+  async archiveTenantRecord(tenantId: string, actorUserId: string): Promise<boolean> {
+    await ensureOnboardingBootstrapped();
+    const now = new Date();
+    if (isDatabaseConnected()) {
+      if (!Types.ObjectId.isValid(tenantId)) return false;
+      const res = await TenantModel.updateOne(
+        { _id: new Types.ObjectId(tenantId), isOfficialStore: { $ne: true } },
+        {
+          $set: {
+            status: 'ARCHIVED',
+            isDeleted: true,
+            deletedAt: now,
+            deletedBy: Types.ObjectId.isValid(actorUserId) ? new Types.ObjectId(actorUserId) : undefined,
+          },
+        }
+      );
+      if (res.modifiedCount === 0) return false;
+      await StoreModel.updateMany(
+        { tenantId: new Types.ObjectId(tenantId) },
+        { $set: { status: 'ARCHIVED', isDeleted: true, deletedAt: now } }
+      ).setOptions({ bypassTenantCheck: true });
+      return true;
+    }
+
+    const t = sandboxTenants.get(tenantId);
+    if (!t || t.isOfficialStore) return false;
+    sandboxTenants.delete(tenantId);
+    sandboxStores.delete(tenantId);
+    sandboxSubscriptions.delete(tenantId);
+    return true;
   },
 
   /**

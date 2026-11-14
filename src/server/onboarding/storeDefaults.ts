@@ -72,6 +72,22 @@ export const NEXORA_PLANS_CATALOG: PlanDefinition[] = [
     transactionFeePercent: 0,
     hasDedicatedDatabase: false,
   },
+  {
+    code: 'ENTERPRISE',
+    name: 'Enterprise Dedicated',
+    description: 'Dedicated tenant database isolation, SLA guarantees, unlimited SKUs, and white-label governance.',
+    priceMonthlyUSD: 199,
+    priceMonthlyBDT: 19900,
+    priceYearlyUSD: 1990,
+    priceYearlyBDT: 199000,
+    maxProducts: 100000,
+    maxStaffUsers: 100,
+    maxStorageMB: 256000,
+    customDomainAllowed: true,
+    adSenseAllowed: true,
+    transactionFeePercent: 0,
+    hasDedicatedDatabase: true,
+  },
 ];
 
 export interface DefaultThemePreset {

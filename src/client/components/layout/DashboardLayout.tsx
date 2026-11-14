@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   KeyRound,
   UserCog,
+  Crown,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -55,6 +56,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems: NavItem[] = [
+    { id: 'super-admin', label: 'Super Admin', icon: <Crown className="w-4 h-4" />, badge: 'Phase 09' },
     { id: 'onboarding', label: 'Store Onboarding', icon: <Store className="w-4 h-4" />, badge: 'Phase 08' },
     { id: 'rbac', label: 'Roles & Permissions', icon: <UserCog className="w-4 h-4" />, badge: 'Phase 07' },
     { id: 'auth', label: 'Authentication & MFA', icon: <KeyRound className="w-4 h-4" />, badge: 'Phase 06' },
@@ -142,7 +144,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-          <span className="font-mono">Phase 03 Active</span>
+          <span className="font-mono">Phase 09 Active</span>
           <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
             Ready
           </span>

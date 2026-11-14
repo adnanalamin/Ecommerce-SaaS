@@ -522,4 +522,46 @@ export const authRepository = {
       .slice(0, limit)
       .map((h) => ({ ...h }));
   },
+
+  async listAllUsers(): Promise<AuthUserRecord[]> {
+    if (isDatabaseConnected()) {
+      const docs = await UserModel.find({}).sort({ createdAt: -1 });
+      return docs.map(toUserRecord);
+    }
+    return Array.from(sandboxUsersById.values())
+      .map((u) => ({ ...u, mfaBackupCodesHashed: [...u.mfaBackupCodesHashed] }))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  },
+
+  async listRecentLoginHistory(limit = 60): Promise<LoginHistoryRecord[]> {
+    if (isDatabaseConnected()) {
+      const docs = await LoginHistoryModel.find({}).sort({ createdAt: -1 }).limit(limit);
+      return docs.map((doc) => ({
+        id: doc._id.toString(),
+        userId: doc.userId?.toString(),
+        email: doc.email,
+        sessionId: doc.sessionId,
+        status: doc.status,
+        failureReason: doc.failureReason,
+        ipAddress: doc.ipAddress,
+        userAgent: doc.userAgent,
+        deviceLabel: doc.deviceLabel,
+        suspiciousSignals: doc.suspiciousSignals,
+        createdAt: doc.createdAt,
+      }));
+    }
+    return sandboxLoginHistory.slice(0, limit).map((h) => ({ ...h }));
+  },
+
+  async countActiveSessions(): Promise<number> {
+    const now = new Date();
+    if (isDatabaseConnected()) {
+      return AuthSessionModel.countDocuments({ isRevoked: false, expiresAt: { $gt: now } });
+    }
+    let count = 0;
+    for (const s of sandboxSessionsById.values()) {
+      if (!s.isRevoked && s.expiresAt > now) count++;
+    }
+    return count;
+  },
 };
