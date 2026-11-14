@@ -12,6 +12,7 @@ import { databaseRouter } from './database.ts';
 import { securityRouter } from './security.ts';
 import { authRouter } from './auth.ts';
 import { rbacRouter } from './rbac.ts';
+import { onboardingRouter } from './onboarding.ts';
 
 export const v1Router = Router();
 
@@ -30,6 +31,9 @@ v1Router.use('/auth', authRouter);
 // 5. Granular RBAC, platform/tenant permissions, invitations & ownership checks
 v1Router.use('/rbac', rbacRouter);
 
+// 6. Automatic tenant store onboarding, provisioning & official store
+v1Router.use('/onboarding', onboardingRouter);
+
 // 4. API v1 Root Info & Directory
 v1Router.get('/', (_req: Request, res: Response) => {
   const context = getTenantContext();
@@ -43,6 +47,8 @@ v1Router.get('/', (_req: Request, res: Response) => {
       { domain: 'database', path: '/api/v1/database', description: 'Database dictionary, verification tests, and seed' },
       { domain: 'security', path: '/api/v1/security', description: 'Security checklist, CSRF token, and automated test suite' },
       { domain: 'auth', path: '/api/v1/auth', description: 'Authentication, MFA, and session tokens' },
+      { domain: 'rbac', path: '/api/v1/rbac', description: 'Granular RBAC, roles, invitations, and resource authorization' },
+      { domain: 'onboarding', path: '/api/v1/onboarding', description: 'Automatic tenant store provisioning & NEXORA Official Store' },
       { domain: 'platform', path: '/api/v1/platform', description: 'Platform Super Admin operations' },
       { domain: 'tenant', path: '/api/v1/tenant', description: 'Merchant Admin operations & inventory' },
       { domain: 'storefront', path: '/api/v1/storefront', description: 'Public shopper storefront catalog' },

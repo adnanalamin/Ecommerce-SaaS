@@ -17,9 +17,10 @@ import { DatabaseArchitectureView } from './client/components/database/DatabaseA
 import { SecurityFoundationView } from './client/components/security/SecurityFoundationView.tsx';
 import { AuthWorkbenchView } from './client/components/auth/AuthWorkbenchView.tsx';
 import { RbacConsoleView } from './client/components/rbac/RbacConsoleView.tsx';
+import { StoreOnboardingView } from './client/components/onboarding/StoreOnboardingView.tsx';
 
 function AppContent() {
-  const [activeNavId, setActiveNavId] = useState<string>('rbac');
+  const [activeNavId, setActiveNavId] = useState<string>('onboarding');
   const [activeArchTab, setActiveArchTab] = useState<string>('overview');
   const [healthData, setHealthData] = useState<HealthCheckResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(false);
@@ -67,6 +68,7 @@ function AppContent() {
 
 
   const breadcrumbsMap: Record<string, Array<{ label: string }>> = {
+    'onboarding': [{ label: 'NEXORA Platform' }, { label: 'Phase 08 Automatic Store Creation' }],
     'rbac': [{ label: 'NEXORA Platform' }, { label: 'Phase 07 RBAC & Permissions' }],
     'auth': [{ label: 'NEXORA Platform' }, { label: 'Phase 06 Authentication & MFA' }],
     'security': [{ label: 'NEXORA Platform' }, { label: 'Phase 05 Security Foundation' }],
@@ -88,6 +90,9 @@ function AppContent() {
       breadcrumbs={breadcrumbsMap[activeNavId] || [{ label: 'NEXORA' }, { label: 'Overview' }]}
     >
       <ToastContainer />
+
+      {/* VIEW -4: PHASE 08 AUTOMATIC TENANT STORE CREATION */}
+      {activeNavId === 'onboarding' && <StoreOnboardingView />}
 
       {/* VIEW -3: PHASE 07 RBAC & RESOURCE AUTHORIZATION */}
       {activeNavId === 'rbac' && <RbacConsoleView />}

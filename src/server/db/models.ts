@@ -38,6 +38,8 @@ export {
   type ITenant,
   type TenantStatus,
   type TenantTier,
+  type StoreOwnershipType,
+  type OnboardingStep,
 } from './schemas/global/tenants.ts';
 
 export {
@@ -62,6 +64,13 @@ export {
   type IAdminActivityLog,
   type AdminActivityAction,
 } from './schemas/global/rbac.ts';
+
+export {
+  OnboardingSessionModel,
+  OnboardingSessionSchema,
+  type IOnboardingSession,
+  type OnboardingSessionStatus,
+} from './schemas/global/onboarding.ts';
 
 // 2. TENANT ORGANIZATIONAL MODELS
 export {

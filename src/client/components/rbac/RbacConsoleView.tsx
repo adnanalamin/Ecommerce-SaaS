@@ -241,9 +241,24 @@ export const RbacConsoleView: React.FC = () => {
     return { res, json };
   }, []);
 
+  const isAuthenticatedRef = useRef<boolean>(false);
+
   const loadContextualData = useCallback(
-    async (tenantId: string) => {
+    async (tenantId: string, authenticatedOverride?: boolean) => {
       if (!tenantId) return;
+      const isAuthenticated = authenticatedOverride ?? isAuthenticatedRef.current;
+      if (!isAuthenticated) {
+        const pubRes = await apiCall(`/api/v1/rbac/storefront/${tenantId}/catalog`);
+        setTenantRoles([]);
+        setMemberships([]);
+        setInvitations([]);
+        setProducts(pubRes.res.ok ? pubRes.json?.data?.products || [] : []);
+        setOrders([]);
+        setPlatformUsers([]);
+        setActivityLogs([]);
+        return;
+      }
+
       const [rolesRes, membersRes, prodRes, ordRes, tenantLogsRes, platUsersRes, platLogsRes] =
         await Promise.all([
           apiCall(`/api/v1/rbac/tenants/${tenantId}/roles`),
@@ -288,6 +303,8 @@ export const RbacConsoleView: React.FC = () => {
         apiCall('/api/v1/rbac/overview'),
         apiCall('/api/v1/rbac/me/permissions'),
       ]);
+      const isAuthenticated = Boolean(meRes.res.ok && meRes.json?.data?.authenticated);
+      isAuthenticatedRef.current = isAuthenticated;
       if (ovRes.res.ok && ovRes.json?.data) {
         setPermissionsCatalog(ovRes.json.data.permissions || []);
         setSystemRoles(ovRes.json.data.systemRoles || []);
@@ -298,7 +315,7 @@ export const RbacConsoleView: React.FC = () => {
           setSelectedTenantId(activeTid);
         }
         if (meRes.res.ok) setMeSummary(meRes.json?.data || null);
-        if (activeTid) await loadContextualData(activeTid);
+        if (activeTid) await loadContextualData(activeTid, isAuthenticated);
       }
     } finally {
       setLoading(false);

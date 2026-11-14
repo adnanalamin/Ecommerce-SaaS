@@ -189,8 +189,8 @@ export const AuthWorkbenchView: React.FC = () => {
     setCheckingSession(true);
     try {
       await ensureCsrfToken();
-      const { res, json } = await apiFetch('/api/v1/auth/me');
-      if (res.ok && json?.data?.user) {
+      const { res, json } = await apiFetch('/api/v1/auth/session');
+      if (res.ok && json?.data?.authenticated && json?.data?.user) {
         setCurrentUser(json.data.user);
         setCurrentSessionId(json.data.sessionId);
         await loadAccountSecurity();

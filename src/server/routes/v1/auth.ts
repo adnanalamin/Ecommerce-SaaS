@@ -7,10 +7,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authService, type ClientMetadata, type SessionIssueResult } from '../../auth/authService.ts';
+import { authRepository } from '../../auth/authRepository.ts';
+import { verifyAccessToken } from '../../auth/tokens.ts';
 import { authRateLimiter } from '../../middleware/rateLimiter.ts';
 import { validateRequest } from '../../middleware/validateRequest.ts';
 import {
   requireAuth,
+  extractAccessTokenFromRequest,
   SESSION_COOKIE_BASE,
   REFRESH_COOKIE_BASE,
   getCookieName,
@@ -322,6 +325,54 @@ authRouter.post(
 // ==========================================
 // AUTHENTICATED ACCOUNT & SESSION ENDPOINTS
 // ==========================================
+
+/**
+ * GET /api/v1/auth/session
+ * Non-throwing session status probe for initial SPA boot (never logs 401 for guests)
+ */
+authRouter.get('/session', async (req: Request, res: Response) => {
+  const csrfToken = issueCsrfCookie(res);
+  const token = extractAccessTokenFromRequest(req);
+  if (!token) {
+    return sendSuccess(res, {
+      authenticated: false,
+      user: null,
+      sessionId: null,
+      csrfToken,
+    });
+  }
+
+  try {
+    const claims = await verifyAccessToken(token);
+    const session = await authRepository.findSessionById(claims.sid);
+    if (!session || session.isRevoked || session.expiresAt <= new Date()) {
+      clearAllAuthCookies(res);
+      return sendSuccess(res, { authenticated: false, user: null, sessionId: null, csrfToken });
+    }
+    const user = await authRepository.findUserById(claims.sub);
+    if (!user || user.status !== 'ACTIVE' || user.tokenVersion !== claims.tv) {
+      clearAllAuthCookies(res);
+      return sendSuccess(res, { authenticated: false, user: null, sessionId: null, csrfToken });
+    }
+
+    return sendSuccess(res, {
+      authenticated: true,
+      user: {
+        userId: user.id,
+        sessionId: session.sessionId,
+        email: user.email,
+        fullName: user.fullName,
+        userType: user.userType,
+        isMfaEnabled: user.isMfaEnabled,
+      },
+      sessionId: session.sessionId,
+      csrfToken,
+    });
+  } catch {
+    clearAllAuthCookies(res);
+    return sendSuccess(res, { authenticated: false, user: null, sessionId: null, csrfToken });
+  }
+});
 
 /**
  * GET /api/v1/auth/me

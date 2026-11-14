@@ -55,6 +55,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems: NavItem[] = [
+    { id: 'onboarding', label: 'Store Onboarding', icon: <Store className="w-4 h-4" />, badge: 'Phase 08' },
     { id: 'rbac', label: 'Roles & Permissions', icon: <UserCog className="w-4 h-4" />, badge: 'Phase 07' },
     { id: 'auth', label: 'Authentication & MFA', icon: <KeyRound className="w-4 h-4" />, badge: 'Phase 06' },
     { id: 'security', label: 'Security Foundation', icon: <ShieldCheck className="w-4 h-4" />, badge: 'Phase 05' },

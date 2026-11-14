@@ -19,7 +19,12 @@ export interface IStore extends Document {
   contactEmail: string;
   contactPhone?: string;
   currency: 'BDT' | 'USD' | 'EUR' | 'GBP';
+  locale: string;
   timezone: string;
+  status: 'PENDING_SETUP' | 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
+  defaultThemeCode: string;
+  businessCategory?: string;
+  isOfficialStore: boolean;
   isMaintenanceMode: boolean;
   isDeleted: boolean;
   createdAt: Date;
@@ -36,7 +41,17 @@ export const StoreSchema = new Schema<IStore>(
     contactEmail: { type: String, required: true, trim: true, lowercase: true },
     contactPhone: { type: String, trim: true },
     currency: { type: String, enum: ['BDT', 'USD', 'EUR', 'GBP'], default: 'BDT' },
+    locale: { type: String, default: 'en-BD', trim: true },
     timezone: { type: String, default: 'Asia/Dhaka' },
+    status: {
+      type: String,
+      enum: ['PENDING_SETUP', 'ACTIVE', 'SUSPENDED', 'ARCHIVED'],
+      default: 'ACTIVE',
+      index: true,
+    },
+    defaultThemeCode: { type: String, default: 'nexora-atelier', trim: true },
+    businessCategory: { type: String, trim: true },
+    isOfficialStore: { type: Boolean, default: false, index: true },
     isMaintenanceMode: { type: Boolean, default: false },
   },
   { timestamps: true, collection: 'stores' }

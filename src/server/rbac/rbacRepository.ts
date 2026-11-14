@@ -34,6 +34,7 @@ export interface RbacTenantRecord {
   storeId: string;
   ownerUserId: string;
   status: string;
+  isOfficialStore?: boolean;
 }
 
 export interface TenantRoleRecord {
@@ -381,6 +382,7 @@ export const rbacRepository = {
         storeId: storeByTenant.get(t._id.toString()) || t._id.toString(),
         ownerUserId: t.ownerUserId.toString(),
         status: t.status,
+        isOfficialStore: Boolean(t.isOfficialStore),
       }));
     }
     return Array.from(sandboxTenants.values());
@@ -401,9 +403,87 @@ export const rbacRepository = {
         storeId: s?._id.toString() || t._id.toString(),
         ownerUserId: t.ownerUserId.toString(),
         status: t.status,
+        isOfficialStore: Boolean(t.isOfficialStore),
       };
     }
     return sandboxTenants.get(tenantId) || null;
+  },
+
+  async findTenantBySlug(slug: string): Promise<RbacTenantRecord | null> {
+    await ensureRbacBootstrapped();
+    const normalized = slug.trim().toLowerCase();
+    if (isDatabaseConnected()) {
+      const t = await TenantModel.findOne({ slug: normalized, isDeleted: { $ne: true } }).lean();
+      if (!t) return null;
+      const s = await StoreModel.findOne({ tenantId: t._id }).setOptions({ bypassTenantCheck: true }).lean();
+      return {
+        id: t._id.toString(),
+        name: t.name,
+        slug: t.slug,
+        subdomain: t.subdomain,
+        storeId: s?._id.toString() || t._id.toString(),
+        ownerUserId: t.ownerUserId.toString(),
+        status: t.status,
+        isOfficialStore: Boolean(t.isOfficialStore),
+      };
+    }
+    for (const t of sandboxTenants.values()) {
+      if (t.slug.toLowerCase() === normalized) return { ...t };
+    }
+    return null;
+  },
+
+  registerSandboxTenant(record: RbacTenantRecord): void {
+    sandboxTenants.set(record.id, { ...record });
+  },
+
+  updateSandboxTenantStatus(tenantId: string, status: string): void {
+    const existing = sandboxTenants.get(tenantId);
+    if (existing) {
+      sandboxTenants.set(tenantId, { ...existing, status });
+    }
+  },
+
+  removeSandboxTenant(tenantId: string): void {
+    sandboxTenants.delete(tenantId);
+    for (const key of Array.from(sandboxTenantRoles.keys())) {
+      if (key.startsWith(`${tenantId}:`)) sandboxTenantRoles.delete(key);
+    }
+    for (const key of Array.from(sandboxMemberships.keys())) {
+      if (key.startsWith(`${tenantId}:`)) sandboxMemberships.delete(key);
+    }
+  },
+
+  async listMembershipsByUser(userId: string): Promise<StoreMembershipRecord[]> {
+    await ensureRbacBootstrapped();
+    if (isDatabaseConnected()) {
+      if (!Types.ObjectId.isValid(userId)) return [];
+      const docs = await StoreMembershipModel.find({
+        userId: new Types.ObjectId(userId),
+        status: 'ACTIVE',
+      })
+        .setOptions({ bypassTenantCheck: true })
+        .populate('userId', 'email fullName')
+        .lean();
+      return docs.map((d: any) => ({
+        id: d._id.toString(),
+        tenantId: d.tenantId.toString(),
+        storeId: d.storeId.toString(),
+        userId: d.userId?._id?.toString() || d.userId.toString(),
+        userEmail: d.userId?.email || '',
+        userFullName: d.userId?.fullName || '',
+        roleId: d.roleId.toString(),
+        roleSlug: d.roleSlug,
+        status: d.status,
+        invitedBy: d.invitedBy?.toString(),
+        revokedAt: d.revokedAt,
+        revokedBy: d.revokedBy?.toString(),
+        joinedAt: d.joinedAt,
+      }));
+    }
+    return Array.from(sandboxMemberships.values())
+      .filter((m) => m.userId === userId && m.status === 'ACTIVE')
+      .map((m) => ({ ...m }));
   },
 
   async createTenant(input: {

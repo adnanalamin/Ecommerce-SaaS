@@ -20,7 +20,11 @@ export type AdminActivityAction =
   | 'PERMISSION_DENIED'
   | 'RESOURCE_CREATED'
   | 'RESOURCE_UPDATED'
-  | 'RESOURCE_DELETED';
+  | 'RESOURCE_DELETED'
+  | 'STORE_PROVISIONED'
+  | 'STORE_SUSPENDED'
+  | 'STORE_ACTIVATED'
+  | 'OFFICIAL_STORE_PROVISIONED';
 
 export interface IStaffInvitation extends Document {
   _id: Types.ObjectId;

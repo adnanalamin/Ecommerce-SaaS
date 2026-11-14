@@ -174,6 +174,14 @@ export function requireTenantPermission(
         if (!tenant) {
           return next(new NotFoundError('Target tenant store does not exist.', 'TENANT_NOT_FOUND'));
         }
+        if (tenant.status === 'SUSPENDED') {
+          return next(
+            new ForbiddenError(
+              'This store is currently suspended by platform governance.',
+              'STORE_SUSPENDED'
+            )
+          );
+        }
 
         // Propagate verified tenantId into AsyncLocalStorage for Mongoose isolation hooks
         const currentStore = tenantAsyncStorage.getStore();
